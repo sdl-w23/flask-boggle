@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, flash, redirect
+from flask import Flask, request, render_template, flash, redirect, session
 from flask_debugtoolbar import DebugToolbarExtension
 from surveys import satisfaction_survey
 
@@ -9,7 +9,6 @@ app.config['SECRET_KEY'] = "oh-so-secret"
 debug = DebugToolbarExtension(app)
 
 
-responses = [] 
 
 
 @app.route("/")
@@ -19,11 +18,12 @@ def show_survey():
 @app.route("/start", methods=["POST"])
 def to_survey():
     """ Redirect to the first question. """
-    responses = [] 
+    session["responses"] = []
     return redirect("/questions/0")
 
 @app.route("/questions/<int:qnum>")
 def show_question(qnum):
+    responses = session.get("responses")
 
     if(qnum > len(satisfaction_survey.questions)):
         flash(f"Invalid question ({qnum})!")
@@ -46,7 +46,9 @@ def show_question(qnum):
 @app.route("/answer", methods=["POST"])
 def whats_next():
     choice = request.form['choices']
+    responses = session["responses"]
     responses.append(choice)
+    session["responses"] = responses
 
     if(len(responses) == len(satisfaction_survey.questions)):
         return redirect("/end")
